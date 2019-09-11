@@ -1,4 +1,6 @@
 #  https://towardsdatascience.com/accessing-google-calendar-events-data-using-python-e915599d3ae2
+#  https://gist.github.com/cwurld/9b4e10dbeecab28345a3
+#  https://developers.google.com/calendar/v3/reference/events/list
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -47,34 +49,31 @@ for event in events:
 """
 ########### GETTING EVENTS BY DATE ###############################################
 
-"""
-    Upper bound (exclusive) for an event's start time to filter by. Optional. 
-    The default is not to filter by start time. 
-    Must be an RFC3339 timestamp with mandatory time zone offset, 
-    for example, 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. 
-    Milliseconds may be provided but are ignored. 
-    If timeMin is set, timeMax must be greater than timeMin.
-"""
-
-
 print('Getting tomorrow events')
 tz = pytz.timezone('America/Montreal')
 
-#  minimum_time = datetime.date(2019, 9, 11)
-minimum_time = datetime.datetime(year=2019, month=9, day=11, hour=6, minute=0, second=0, tzinfo=tz)
-minimum_time2 = minimum_time.isoformat() + "Z"
-#  maximum_time = datetime.date(2019, 9, 11)
-maximum_time = datetime.datetime(year=2019, month=9, day=11, hour=18, minute=0, second=0, tzinfo=tz)
-maximum_time2 = maximum_time.isoformat() + "Z"
-print(minimum_time)
-print(minimum_time2)
+#  setting dates of analysis
+the_datetime = tz.localize(datetime.datetime(2019, 9, 10, 6))
+the_datetime2 = tz.localize(datetime.datetime(2019, 9, 10, 19))
+
+#  converting date to the right format
+minimum_time = the_datetime.isoformat()
+maximum_time = the_datetime2.isoformat()
+
 print("-"*50)
 
-events_result = service.events().list(calendarId='primary', timeMin=minimum_time2,
-                                      maxResults=10, singleEvents=True,
-                                      orderBy='startTime').execute()
+events_result = service.events().list(calendarId='primary', timeMin=minimum_time,
+                                      timeMax=maximum_time, maxResults=10,
+                                      singleEvents=True, orderBy='startTime').execute()
 events = events_result.get('items', [])
 
+#  printing header
+print('start\tend\tevent')
+
 for event in events:
-    start = event['start'].get('dateTime', event['start'].get('date'))
-    print(start, event['summary'])
+    full_start = event['start'].get('dateTime', event['start'].get('date'))
+    #  print('full start', full_start)
+    #  issue : removing semicolon at timezone definition
+    #  datetime.datetime.strptime(full_start, '%Y-%m-2%dT%H:%M:%S-04:00')
+    full_end = event['end'].get('dateTime', event['end'].get('date'))
+    print(full_start, "\t", full_end, "\t", event['summary'])
